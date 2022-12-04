@@ -41,6 +41,9 @@ data class KnightTour(
     val size: Int,
     val history: List<Location> = listOf(Location(0, 0)),
 ) {
+    val max = (size - 1) / 2
+    val min = max - size + 1
+
     private val current = history.last()
     val done = history.size == size * size
 
@@ -48,17 +51,16 @@ data class KnightTour(
         mir(current, current) && history.dropLastWhile { l1 -> history.find { l2 -> mir(l1, l2) } != null }.isEmpty()
     }
 
-    private fun isValid(location: Location): Boolean {
-        val max = (size - 1) / 2
-        val min = max - size + 1
-        return location.x in min..max && location.y in min..max && location !in history
-    }
+    private fun isValid(location: Location): Boolean =
+        location.x in min..max && location.y in min..max && location !in history
 
     private fun move(location: Location) = copy(history = history + location)
 
-    fun candidates(): List<KnightTour> = movePatterns
-        .map { current.move(it) }
+    fun candidatesFor(location: Location): List<Location> = movePatterns
+        .map { location.move(it) }
         .filter { isValid(it) }
+
+    fun candidates(): List<KnightTour> = candidatesFor(current)
         .fold(listOf<Location>()) { cur, l1 ->
             mirrors.forEach { mir ->
                 cur.forEach { l2 ->
