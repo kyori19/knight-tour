@@ -39,7 +39,7 @@ data class Move(
     val dy: Int,
 )
 
-private val movePatterns = listOf(
+val movePatterns = listOf(
     Move(-2, -1),
     Move(-1, -2),
     Move(-2, 1),
@@ -82,7 +82,7 @@ data class KnightTour(
     val availabilities: MutableMap<Location, List<Location>>,
 ) {
     val current = history.last()
-    val done = history.size == size.size * size.size && (!mustReturn || movePatterns.find { m -> current.move(m, true) == Location(size, 0, 0) } != null)
+    val done = history.size == size.size * size.size && (!mustReturn || movePatterns.find { m -> current.move(m, true) == history.first() } != null)
 
     private val mirrors = mirrorDefs.filter { mir ->
         mir(current, current) && history.dropLastWhile { l1 -> history.find { l2 -> mir(l1, l2) } != null }.isEmpty()
