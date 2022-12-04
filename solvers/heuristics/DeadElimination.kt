@@ -1,23 +1,44 @@
 package solvers.heuristics
 
 import games.KnightTour
-import games.Location
 import solvers.Heuristic
 
-object DeadElimination : Heuristic {
+class DeadElimination(
+    private val mode: Mode,
+) : Heuristic {
+    enum class Mode {
+        ZERO,
+        ONE,
+        SINGLE_ONE,
+    }
+
     override fun cost(game: KnightTour): Int =
-        if (game.isDead()) { -1 } else { game.history.size }
+        if (game.isDead()) {
+            -1
+        } else {
+            game.history.size
+        }
 
     private fun KnightTour.isDead(): Boolean {
-        (min..max).forEach { x ->
-            (min..max).forEach eachLoc@ { y ->
-                val location = Location(x, y)
-
-                if (history.contains(location)) {
-                    return@eachLoc
+        when (mode) {
+            Mode.ZERO -> {
+                availabilities.keys.forEach { loc ->
+                    if (candidatesFor(loc).isEmpty()) {
+                        return true
+                    }
                 }
+            }
 
-                if (candidatesFor(location).isEmpty()) {
+            Mode.ONE -> {
+                availabilities.keys.forEach { loc ->
+                    if (loc != current && candidatesFor(loc).size < 2) {
+                        return true
+                    }
+                }
+            }
+
+            Mode.SINGLE_ONE -> {
+                if (availabilities.keys.count { loc -> candidatesFor(loc).size < 2 } > 1) {
                     return true
                 }
             }

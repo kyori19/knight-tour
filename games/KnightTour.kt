@@ -37,14 +37,31 @@ private val mirrorDefs: List<Mirror> = listOf(
     { l1, l2 -> l1.x == -l2.y && l1.y == -l2.x },
 )
 
-data class KnightTour(
-    val size: Int,
-    val history: List<Location> = listOf(Location(0, 0)),
-) {
+fun KnightTour(size: Int): KnightTour {
     val max = (size - 1) / 2
     val min = max - size + 1
 
-    private val current = history.last()
+    return KnightTour(
+        size,
+        listOf(Location(0, 0)),
+        (min..max).map { x ->
+            (min..max).map { y ->
+                val loc = Location(x, y)
+                loc to movePatterns.map { m -> loc.move(m) }
+            }
+        }.flatten().toMap().toMutableMap(),
+    )
+}
+
+data class KnightTour(
+    val size: Int,
+    val history: List<Location>,
+    val availabilities: MutableMap<Location, List<Location>>,
+) {
+    private val max = (size - 1) / 2
+    private val min = max - size + 1
+
+    val current = history.last()
     val done = history.size == size * size
 
     private val mirrors = mirrorDefs.filter { mir ->
@@ -54,11 +71,16 @@ data class KnightTour(
     private fun isValid(location: Location): Boolean =
         location.x in min..max && location.y in min..max && location !in history
 
-    private fun move(location: Location) = copy(history = history + location)
+    private fun move(location: Location) = copy(
+        history = history + location,
+        availabilities = availabilities.toMutableMap().apply { remove(current) },
+    )
 
-    fun candidatesFor(location: Location): List<Location> = movePatterns
-        .map { location.move(it) }
-        .filter { isValid(it) }
+    fun candidatesFor(location: Location): List<Location> {
+        val avail = (availabilities[location] ?: movePatterns.map { location.move(it) }).filter { isValid(it) }
+        availabilities[location] = avail
+        return avail
+    }
 
     fun candidates(): List<KnightTour> = candidatesFor(current)
         .fold(listOf<Location>()) { cur, l1 ->
@@ -73,4 +95,6 @@ data class KnightTour(
             return@fold cur + l1
         }
         .map { move(it) }
+
+    override fun toString(): String = "KnightTour[$size]($history)"
 }
