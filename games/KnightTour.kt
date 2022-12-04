@@ -1,10 +1,35 @@
 package games
 
+data class Size(
+    val size: Int,
+) {
+    val max = (size - 1) / 2
+    val min = max - size + 1
+    val range = min..max
+
+    override fun toString() = size.toString()
+}
+
+val Int.size: Size
+    get() = Size(this)
+
 data class Location(
+    val size: Size,
     val x: Int,
     val y: Int,
 ) {
-    fun move(m: Move): Location = Location(x + m.dx, y + m.dy)
+    fun isValid(): Boolean = x in size.range && y in size.range
+
+    fun move(m: Move, loopX: Boolean): Location {
+        var nx = x + m.dx
+        if (loopX && nx < size.min) {
+            nx += size.size
+        }
+        if (loopX && nx > size.max) {
+            nx -= size.size
+        }
+        return copy(x = nx, y = y + m.dy)
+    }
 
     override fun toString(): String = "($x, $y)"
 }
@@ -37,39 +62,33 @@ private val mirrorDefs: List<Mirror> = listOf(
     { l1, l2 -> l1.x == -l2.y && l1.y == -l2.x },
 )
 
-fun KnightTour(size: Int): KnightTour {
-    val max = (size - 1) / 2
-    val min = max - size + 1
-
-    return KnightTour(
+fun KnightTour(size: Size, mustReturn: Boolean = false): KnightTour =
+    KnightTour(
         size,
-        listOf(Location(0, 0)),
-        (min..max).map { x ->
-            (min..max).map { y ->
-                val loc = Location(x, y)
-                loc to movePatterns.map { m -> loc.move(m) }
+        mustReturn,
+        listOf(Location(size, 0, 0)),
+        size.range.map { x ->
+            size.range.map { y ->
+                val loc = Location(size, x, y)
+                loc to movePatterns.map { m -> loc.move(m, mustReturn) }
             }
         }.flatten().toMap().toMutableMap(),
     )
-}
 
 data class KnightTour(
-    val size: Int,
+    val size: Size,
+    val mustReturn: Boolean,
     val history: List<Location>,
     val availabilities: MutableMap<Location, List<Location>>,
 ) {
-    private val max = (size - 1) / 2
-    private val min = max - size + 1
-
     val current = history.last()
-    val done = history.size == size * size
+    val done = history.size == size.size * size.size && (!mustReturn || movePatterns.find { m -> current.move(m, true) == Location(size, 0, 0) } != null)
 
     private val mirrors = mirrorDefs.filter { mir ->
         mir(current, current) && history.dropLastWhile { l1 -> history.find { l2 -> mir(l1, l2) } != null }.isEmpty()
     }
 
-    private fun isValid(location: Location): Boolean =
-        location.x in min..max && location.y in min..max && location !in history
+    private fun isValid(location: Location): Boolean = location.isValid() && location !in history
 
     private fun move(location: Location) = copy(
         history = history + location,
@@ -77,7 +96,7 @@ data class KnightTour(
     )
 
     fun candidatesFor(location: Location): List<Location> {
-        val avail = (availabilities[location] ?: movePatterns.map { location.move(it) }).filter { isValid(it) }
+        val avail = (availabilities[location] ?: movePatterns.map { location.move(it, mustReturn) }).filter { isValid(it) }
         availabilities[location] = avail
         return avail
     }
