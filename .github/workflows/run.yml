@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Compile main.kt
-        run: kotlinc main.kt -cp games -cp solvers -include-runtime -d main.jar
+        run: kotlinc main.kt **/*.kt -include-runtime -d main.jar
 
       - name: Upload main.jar
         uses: actions/upload-artifact@v3
