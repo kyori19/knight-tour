@@ -4,12 +4,12 @@ import games.KnightTour
 import java.util.PriorityQueue
 
 class AStar(
-    private val costFn: (KnightTour) -> Int,
+    private val heuristic: Heuristic,
 ) : Solver {
     override fun solve(initial: KnightTour): Pair<Int, KnightTour> {
         var count = 0
         val queue = PriorityQueue<KnightTour> { o1, o2 ->
-            costFn(o2) - costFn(o1)
+            heuristic.cost(o2) - heuristic.cost(o1)
         }
         queue += initial
 
