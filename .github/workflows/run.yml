@@ -35,4 +35,11 @@ jobs:
       - name: Comment result
         uses: peter-evans/commit-comment@v2
         with:
-          body: ${{ steps.run.outputs.body }}
+          body: |
+            Run result for main.jar ([download](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)
+            Compile command: `kotlinc main.kt **/*.kt -include-runtime -d main.jar`
+            Run command: `java -jar main.jar`
+
+            ```txt
+            ${{ steps.run.outputs.body }}
+            ```
