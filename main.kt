@@ -1,6 +1,6 @@
 import games.KnightTour
-import games.Size
-import games.size
+import games.utils.Size
+import games.utils.size
 import solvers.AStar
 import solvers.DFS
 import solvers.Solver

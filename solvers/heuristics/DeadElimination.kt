@@ -1,7 +1,7 @@
 package solvers.heuristics
 
 import games.KnightTour
-import games.movePatterns
+import games.utils.knightMoves
 import solvers.Heuristic
 
 class DeadElimination(
@@ -46,7 +46,7 @@ class DeadElimination(
         }
 
         if (mustReturn) {
-            if (movePatterns.find { m -> history.first().move(m, true) !in history } != null) {
+            if (knightMoves.find { m -> history.first().move(m, true) !in history } != null) {
                 return true
             }
         }
