@@ -1,31 +1,29 @@
 package games
 
-import games.utils.Location
-import games.utils.Size
-import games.utils.knightMoves
-import games.utils.mirrorDefs
+import games.utils.*
 
-fun KnightTour(size: Size, mustReturn: Boolean = false): KnightTour =
-    KnightTour(
-        size,
-        mustReturn,
-        listOf(Location(size, 0, 0)),
+open class KnightTour(
+    val size: Size,
+    val history: List<Location> = listOf(Location(size, 0, 0)),
+    makeAvailabilities: (KnightTour).() -> List<Pair<Location, Availabilities>> = {
         size.range.map { x ->
             size.range.map { y ->
                 val loc = Location(size, x, y)
-                loc to knightMoves.map { m -> loc.move(m, mustReturn) }
+                loc to Availabilities(
+                    0,
+                    knightMoves.map { m -> loc.move(m) },
+                )
             }
-        }.flatten().toMap().toMutableMap(),
-    )
-
-data class KnightTour(
-    val size: Size,
-    val mustReturn: Boolean,
-    val history: List<Location>,
-    val availabilities: MutableMap<Location, List<Location>>,
+        }.flatten()
+    },
 ) {
+    val depth = history.size
     val current = history.last()
-    val done = history.size == size.size * size.size && (!mustReturn || knightMoves.find { m -> current.move(m, true) == history.first() } != null)
+    open val done = depth == size.count
+
+    val availabilities = makeAvailabilities().toMap()
+
+    open fun Location.move(m: Move) = move(m, false)
 
     private val mirrors = mirrorDefs.filter { mir ->
         mir(current, current) && history.dropLastWhile { l1 -> history.find { l2 -> mir(l1, l2) } != null }.isEmpty()
@@ -33,18 +31,16 @@ data class KnightTour(
 
     private fun isValid(location: Location): Boolean = location.isValid() && location !in history
 
-    private fun move(location: Location) = copy(
+    open fun move(location: Location) = KnightTour(
+        size = size,
         history = history + location,
-        availabilities = availabilities.toMutableMap().apply { remove(current) },
+        makeAvailabilities = make@{
+            this@KnightTour.availabilities.filterKeys { it != this@KnightTour.current }
+                .map { (loc, a) -> loc to this@make.Availabilities(a.cacheDepth, a._locations) }
+        },
     )
 
-    fun candidatesFor(location: Location): List<Location> {
-        val avail = (availabilities[location] ?: knightMoves.map { location.move(it, mustReturn) }).filter { isValid(it) }
-        availabilities[location] = avail
-        return avail
-    }
-
-    fun candidates(): List<KnightTour> = candidatesFor(current)
+    fun candidates(): List<KnightTour> = availabilities[current]!!.locations
         .fold(listOf<Location>()) { cur, l1 ->
             mirrors.forEach { mir ->
                 cur.forEach { l2 ->
@@ -59,4 +55,33 @@ data class KnightTour(
         .map { move(it) }
 
     override fun toString(): String = "KnightTour[$size]($history)"
+
+    inner class Availabilities(
+        var cacheDepth: Int,
+        var _locations: List<Location>,
+    ) {
+        val locations: List<Location>
+            get() {
+                assert(cacheDepth <= depth)
+
+                if (cacheDepth < depth) {
+                    update()
+                }
+
+                return _locations
+            }
+
+        private fun update() {
+            cacheDepth = depth
+            _locations = _locations.filter { isValid(it) }
+        }
+
+        override fun toString(): String = "${
+            if (cacheDepth < depth) {
+                "outdated "
+            } else {
+                ""
+            }
+        }(${_locations.size}) $_locations"
+    }
 }

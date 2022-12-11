@@ -6,6 +6,7 @@ data class Size(
     val max = (size - 1) / 2
     val min = max - size + 1
     val range = min..max
+    val count = size * size
 
     override fun toString() = size.toString()
 }

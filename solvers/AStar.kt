@@ -9,7 +9,7 @@ class AStar(
     override fun solve(initial: KnightTour): Pair<Int, KnightTour> {
         var count = 0
         val queue = PriorityQueue<KnightTour> { o1, o2 ->
-            heuristic.cost(o2) - heuristic.cost(o1)
+            heuristic.cost(o2)!! - heuristic.cost(o1)!!
         }
         queue += initial
 
@@ -22,7 +22,9 @@ class AStar(
                     return count to next
                 }
 
-                queue += next
+                if (heuristic.cost(next) != null) {
+                    queue += next
+                }
             }
         }
 
