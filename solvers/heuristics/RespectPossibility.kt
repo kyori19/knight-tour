@@ -5,5 +5,5 @@ import solvers.Heuristic
 
 object RespectPossibility : Heuristic {
     override fun cost(game: KnightTour) =
-        25 * 8 * game.history.size + game.availabilities.values.sumOf { it.locations.size }
+        8 * game.history.size * game.size.count + game.availabilities.values.sumOf { it.locations.size }
 }
